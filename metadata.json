@@ -1,0 +1,6 @@
+{
+  "name": "Bloom Merge",
+  "description": "A relaxing garden puzzle game of color matching, vertical flower stacking, and magical floral merges.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
