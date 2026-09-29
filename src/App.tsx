@@ -187,7 +187,7 @@ export default function App() {
 
         {currentView === 'playing' && (
           <GameScreen
-            key={`game_screen_${activeLevelId}_${completedModalData ? 'done' : 'active'}`}
+            key={`game_screen_${activeLevelId}`}
             level={activeLevelConfig}
             saveData={saveData}
             onLevelComplete={handleLevelComplete}

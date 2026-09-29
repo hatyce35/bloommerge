@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   RotateCcw,
   Lightbulb,
@@ -20,9 +20,10 @@ import {
   unlockLockedFlowers,
   checkLevelGoalsMet,
   findBestHintMove,
+  isFinalLargeFlower,
 } from '../utils/puzzleEngine';
 import { sounds } from '../utils/audio';
-import { FLOWER_FAMILIES } from '../data/flowerFamilies';
+import { FLOWER_FAMILIES, STAGE_DESCRIPTIONS } from '../data/flowerFamilies';
 
 interface DragState {
   sourceColId: number;
@@ -59,6 +60,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         id: `init_${level.id}_${idx}_${fIdx}_${Math.random()}`,
         color: fl.color,
         stage: fl.stage,
+        sourceCount: fl.stage === 1 ? 1 : (fl.stage === 2 ? 2 : 5),
         isWild: fl.isWild,
         isFrozen: fl.isFrozen,
         isRainbow: fl.isRainbow,
@@ -88,57 +90,66 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [isProcessingMerge, setIsProcessingMerge] = useState(false);
   const [lastMergedInfo, setLastMergedInfo] = useState<{ color: string; stage: number } | null>(null);
 
-  // Target bloom stage for "en büyük çiçek" in this level (default 3: Blossom 🌸)
-  const targetBloomStage = level.targetBloomStage || 3;
+  // Check if a column has produced a FINAL LARGE FLOWER
+  // A flower must represent AT LEAST 5 original/small flowers before it can count as a FINAL LARGE FLOWER.
+  // Intermediate flower sizes (1, 2, 3, 4 source flowers) are NOT valid for completing the objective.
+  const colHasBigFlower = useCallback((col: GardenColumnData) => {
+    return col.flowers.some((fl) => isFinalLargeFlower(fl));
+  }, []);
 
-  // Total flowers on board
-  const allFlowersOnBoard = columns.flatMap((c) => c.flowers);
-  const totalFlowersCount = allFlowersOnBoard.length;
-  const largestFlowersCount = allFlowersOnBoard.filter((fl) => fl.stage >= targetBloomStage).length;
+  // Check if the top flower (en üst sıra) of this column is a final large flower
+  const colTopIsBigFlower = useCallback((col: GardenColumnData) => {
+    return col.flowers.length > 0 && isFinalLargeFlower(col.flowers[0]);
+  }, []);
 
-  // 1. "Bütün çiçekler en büyük olana kadar devam etsin":
-  // There must be flowers on the board, and ALL remaining flowers must be at least targetBloomStage!
-  const allFlowersAreLargest =
-    totalFlowersCount > 0 && largestFlowersCount === totalFlowersCount;
+  // Check goal progress: each goal in level.goals must have a final large flower (tik ✓)
+  const goalProgress = useMemo(() => {
+    return level.goals.map((goal) => {
+      let matchCount = 0;
+      columns.forEach((col) => {
+        col.flowers.forEach((fl) => {
+          const colorMatches = !goal.color || fl.color === goal.color || fl.isWild || fl.isRainbow;
+          if (colorMatches && (isFinalLargeFlower(fl) || fl.stage >= (goal.stage || 6))) {
+            matchCount++;
+          }
+        });
+      });
+      const isCompleted = matchCount >= goal.targetCount;
+      return {
+        goal,
+        currentCount: matchCount,
+        targetCount: goal.targetCount,
+        isCompleted,
+      };
+    });
+  }, [columns, level.goals]);
 
-  // 2. "ve en üstte aynı türden renkli en büyük Çiçekler olunca":
-  // In each non-empty column:
-  // - The top flower is a largest flower (stage >= targetBloomStage)
-  // - All flowers in the column are of the same color as the top flower
-  // - All flowers in the column are largest flowers
-  const isColPureAndLargest = useCallback(
-    (col: GardenColumnData) => {
-      if (col.flowers.length === 0) return false;
-      const topFlower = col.flowers[0];
-      const isTopLargest = topFlower.stage >= targetBloomStage;
-      const isAllSameColor = col.flowers.every(
-        (fl) => fl.color === topFlower.color || fl.isWild || fl.isRainbow
-      );
-      const isAllLargest = col.flowers.every((fl) => fl.stage >= targetBloomStage);
-      return isTopLargest && isAllSameColor && isAllLargest;
-    },
-    [targetBloomStage]
-  );
+  // Number of completed goals (tik count)
+  const completedGoalsCount = goalProgress.filter((g) => g.isCompleted).length;
+  const totalGoalsCount = level.goals.length;
+  // ALL goals must be completed (e.g. 3/3 ticks, not 2/3 ticks!)
+  const areAllGoalsMet = totalGoalsCount > 0 && completedGoalsCount === totalGoalsCount;
 
-  const nonEmptyColumns = columns.filter((c) => c.flowers.length > 0);
-  const allColumnsPureAndLargest =
-    nonEmptyColumns.length > 0 && nonEmptyColumns.every(isColPureAndLargest);
+  const allBoardFlowers = columns.flatMap((c) => c.flowers);
+  // Are there any small, intermediate, or unmerged flowers left on the board?
+  // Reference image shows ONLY the final large blooms in the pergola columns, with no remaining buds/sprouts below!
+  const hasRemainingUnmergedSmallFlowers = allBoardFlowers.some((fl) => !isFinalLargeFlower(fl));
 
-  // 3. All flower families present in this level have their largest flower
-  const requiredColors: FlowerColor[] = Array.from(
-    new Set(level.columns.flatMap((c) => c.initialFlowers.map((f) => f.color)))
-  );
-  const bloomedColors = new Set(
-    allFlowersOnBoard.filter((fl) => fl.stage >= targetBloomStage).map((fl) => fl.color)
-  );
-  const allRequiredColorsBloomed = requiredColors.every((c) => bloomedColors.has(c));
+  const bloomedColumnsCount = columns.filter(colHasBigFlower).length;
+  const topBloomedCount = columns.filter(colTopIsBigFlower).length;
+  const totalColumnsCount = columns.length;
 
-  // The round completes when:
-  // - All flowers have reached the largest stage
-  // - In every column with flowers, the top flower is a largest flower of that color, and all flowers in the column match and are largest
-  // - All flower families for this level have bloomed!
-  const isRoundComplete =
-    allFlowersAreLargest && allColumnsPureAndLargest && allRequiredColorsBloomed;
+  // Does every column have its final large bloom at the top?
+  const allColumnsHaveTopFinalFlower =
+    totalColumnsCount > 0 &&
+    columns.every((col) => col.flowers.length > 0 && isFinalLargeFlower(col.flowers[0]));
+
+  // "Bunlar oluşunca bölüm tamamlansın"
+  // As soon as all target flowers in HEDEF are formed (areAllGoalsMet), the level completes!
+  const isLevelComplete =
+    totalGoalsCount > 0
+      ? areAllGoalsMet
+      : (bloomedColumnsCount === totalColumnsCount || topBloomedCount === totalColumnsCount);
 
   // Compute stars based on current moves
   const currentStars =
@@ -148,22 +159,29 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       ? 2
       : 1;
 
-  // When round completes, play celebratory fanfare and transition to next level!
+  // When every column has at least one big flower / top row is filled, complete the level and advance!
   const hasWonRef = useRef(false);
+  const movesRef = useRef(moves);
+  movesRef.current = moves;
+  const currentStarsRef = useRef(currentStars);
+  currentStarsRef.current = currentStars;
+  const onLevelCompleteRef = useRef(onLevelComplete);
+  onLevelCompleteRef.current = onLevelComplete;
+
   useEffect(() => {
     hasWonRef.current = false;
   }, [level.id]);
 
   useEffect(() => {
-    if (isRoundComplete && !hasWonRef.current && !isProcessingMerge) {
+    if (isLevelComplete && !hasWonRef.current) {
       hasWonRef.current = true;
       sounds.playWin();
-      const timer = setTimeout(() => {
-        onLevelComplete(moves, currentStars);
-      }, 700);
-      return () => clearTimeout(timer);
+      // Reliable timer that cannot be cancelled by intermediate re-renders
+      setTimeout(() => {
+        onLevelCompleteRef.current(movesRef.current, currentStarsRef.current);
+      }, 500);
     }
-  }, [isRoundComplete, isProcessingMerge, moves, currentStars, onLevelComplete]);
+  }, [isLevelComplete]);
 
   // Restart level
   const handleRestart = useCallback(() => {
@@ -176,6 +194,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           id: `init_${level.id}_${idx}_${fIdx}_${Math.random()}`,
           color: fl.color,
           stage: fl.stage,
+          sourceCount: fl.stage === 1 ? 1 : (fl.stage === 2 ? 2 : 5),
           isWild: fl.isWild,
           isFrozen: fl.isFrozen,
           isRainbow: fl.isRainbow,
@@ -249,31 +268,37 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         id: `seed_${Date.now()}_1`,
         color: pickedColor1,
         stage: 1, // 🌱 Seed
+        sourceCount: 1,
       },
       {
         id: `seed_${Date.now()}_2`,
         color: pickedColor1,
         stage: 1,
+        sourceCount: 1,
       },
       {
         id: `seed_${Date.now()}_3`,
         color: pickedColor1,
         stage: 1,
+        sourceCount: 1,
       },
       {
         id: `seed_${Date.now()}_4`,
         color: pickedColor2,
         stage: 1,
+        sourceCount: 1,
       },
       {
         id: `seed_${Date.now()}_5`,
         color: pickedColor2,
         stage: 1,
+        sourceCount: 1,
       },
       {
         id: `seed_${Date.now()}_6`,
         color: pickedColor2,
         stage: 1,
+        sourceCount: 1,
       },
     ];
 
@@ -548,16 +573,26 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     }
   };
 
-  const isCompact = columns.length >= 5;
+  // Proportional flower and column sizing: tailored for 6 columns, sleek, balanced, not oversized
+  const colCount = columns.length;
+  const { flowerSize, columnWidth, gapClass } = useMemo(() => {
+    if (colCount <= 5) {
+      return { flowerSize: 54, columnWidth: 62, gapClass: 'gap-2 sm:gap-2.5' };
+    }
+    if (colCount === 6) {
+      return { flowerSize: 49, columnWidth: 55, gapClass: 'gap-1.5 sm:gap-2' };
+    }
+    return { flowerSize: 44, columnWidth: 48, gapClass: 'gap-1' };
+  }, [colCount]);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-md mx-auto px-3 py-3 select-none text-emerald-950 justify-between">
+    <div className="relative flex flex-col h-full w-full max-w-lg mx-auto px-2 sm:px-3 py-1 sm:py-2 select-none text-emerald-950 justify-start overflow-hidden touch-none overscroll-none">
       {/* Top HUD: Navigation, Level Number, Moves, Stars */}
-      <div className="w-full flex flex-col gap-2">
+      <div className="w-full flex flex-col gap-1.5 shrink-0">
         <div className="flex items-center justify-between">
           <button
             onClick={onBackToMenu}
-            className="p-2 rounded-xl bg-white/70 hover:bg-white text-emerald-900 border border-emerald-200/80 shadow-xs transition-all cursor-pointer"
+            className="p-1.5 rounded-xl bg-white/70 hover:bg-white text-emerald-900 border border-emerald-200/80 shadow-xs transition-all cursor-pointer"
             title="Menu"
           >
             <ArrowLeft className="w-4 h-4 text-emerald-700" />
@@ -586,79 +621,104 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </div>
         </div>
 
-        {/* Level Goals Bar: All flowers must become largest, and sorted by color at top of columns */}
-        <div className="flex items-center justify-between bg-white/80 backdrop-blur-xs rounded-2xl py-1.5 px-3 border border-emerald-100 shadow-xs">
+        {/* Level Goals Bar / Victory Celebration Bar */}
+        <div
+          className={`flex items-center justify-between rounded-2xl py-2 px-3 border transition-all ${
+            isLevelComplete
+              ? 'bg-gradient-to-r from-amber-200 via-amber-100 to-amber-200 border-amber-400 shadow-md ring-2 ring-amber-300'
+              : 'bg-white/80 backdrop-blur-xs border-emerald-100 shadow-xs'
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <span className="text-base leading-none">🌸</span>
+            <span className="text-xl leading-none">{isLevelComplete ? '🎉' : '🌸'}</span>
             <div className="flex flex-col">
-              <span className="text-[11px] font-bold text-emerald-950 leading-tight flex items-center gap-1">
-                Hedef: Bütün Çiçekleri En Büyük Yap & Eşle
-                {isRoundComplete && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 inline" />}
+              <span className="text-xs font-black text-emerald-950 leading-tight flex items-center gap-1">
+                {isLevelComplete ? 'TEBRİKLER! SEVİYE TAMAMLANDI! ✨' : 'HEDEF'}
+                {isLevelComplete && <CheckCircle2 className="w-4 h-4 text-emerald-600 inline" />}
               </span>
-              <span className="text-[10px] text-emerald-800 font-semibold">
-                {largestFlowersCount} / {totalFlowersCount} En Büyük Çiçek ·{' '}
-                {allFlowersAreLargest ? 'Hepsi Büyük! Renkleri diz' : 'Büyütmeye devam et'}
+              <span className={`text-[10px] font-bold ${isLevelComplete ? 'text-amber-900' : 'text-emerald-800'}`}>
+                {isLevelComplete
+                  ? `Tüm hedefler tamamlandı! (${totalGoalsCount}/${totalGoalsCount} ✓)`
+                  : `${completedGoalsCount} / ${totalGoalsCount} Tamamlandı`}
               </span>
             </div>
           </div>
 
-          {/* Color Family Bloom Status Chips */}
-          <div className="flex items-center gap-1">
-            {requiredColors.map((color) => {
-              const hasColorBloomed = bloomedColors.has(color);
-              const fam = FLOWER_FAMILIES[color];
-              return (
-                <div
-                  key={color}
-                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg border text-[10px] font-extrabold transition-all ${
-                    hasColorBloomed
-                      ? 'bg-amber-100 border-amber-300 text-amber-950 shadow-xs scale-105 ring-1 ring-amber-300/60'
-                      : 'bg-white/80 border-emerald-200/60 text-stone-400'
-                  }`}
-                  title={`${fam.familyName}: ${hasColorBloomed ? 'Büyük Çiçek Açtı' : 'Büyütülüyor'}`}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full inline-block"
-                    style={{ backgroundColor: fam.themeColor }}
-                  />
-                  <span>{hasColorBloomed ? '🌸' : '🌱'}</span>
-                </div>
-              );
-            })}
-          </div>
+          {/* If level is complete, show direct Next button; otherwise show goal badges with checkmarks (tik) */}
+          {isLevelComplete ? (
+            <button
+              onClick={() => onLevelComplete(moves, currentStars)}
+              className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md animate-bounce cursor-pointer flex items-center gap-1"
+            >
+              <span>Sonraki ➔</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              {goalProgress.map((item, idx) => {
+                const color = item.goal.color || 'pink';
+                return (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg border text-[10px] font-extrabold transition-all ${
+                      item.isCompleted
+                        ? 'bg-emerald-100 border-emerald-400 text-emerald-950 shadow-xs scale-105 ring-1 ring-emerald-400/80'
+                        : 'bg-white/80 border-stone-200 text-stone-400'
+                    }`}
+                    title={`${color}: ${item.isCompleted ? 'Tamamlandı (✓)' : 'Bekleniyor'}`}
+                  >
+                    <FlowerRenderer
+                      color={color}
+                      stage={5}
+                      size={26}
+                      className={item.isCompleted ? 'opacity-100 scale-105' : 'opacity-40 grayscale'}
+                    />
+                    {item.isCompleted ? (
+                      <span className="text-emerald-600 font-black text-xs leading-none">✓</span>
+                    ) : (
+                      <span className="text-stone-300 font-bold text-[10px] leading-none">○</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Floating toast notification when a flower merges */}
+        {/* Floating toast notification when a flower merges (Floating Absolute, ZERO layout shift!) */}
         {lastMergedInfo && (
-          <div className="self-center bg-white/95 border border-amber-300 shadow-md rounded-full px-3 py-1 flex items-center gap-2 text-xs font-bold text-emerald-950 animate-bounce">
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 bg-white/95 border border-amber-300 shadow-lg rounded-full px-3.5 py-1.5 flex items-center gap-2 text-xs font-bold text-emerald-950 transition-opacity duration-300 z-50 pointer-events-none whitespace-nowrap">
             <FlowerRenderer
               color={lastMergedInfo.color as FlowerColor}
               stage={lastMergedInfo.stage as FlowerItem['stage']}
               size={22}
             />
             <span>
-              {FLOWER_FAMILIES[lastMergedInfo.color as FlowerColor]?.stageNames[
-                lastMergedInfo.stage as FlowerItem['stage']
-              ] || 'Yeni Çiçek'}{' '}
-              Oluştu! ✨
+              {STAGE_DESCRIPTIONS[lastMergedInfo.stage as FlowerItem['stage']]?.title || 'Çiçek'}{' '}
+              {lastMergedInfo.stage >= 5
+                ? 'Açtı! 🎉'
+                : lastMergedInfo.stage >= 2
+                ? 'Açtı! 🌸'
+                : 'Filizlendi! 🌱'}
             </span>
           </div>
         )}
       </div>
 
-      {/* Main Playing Area: Hanging Downward Garden Columns */}
-      <div className="flex-1 flex items-start justify-center my-auto py-2 w-full overflow-y-auto no-scrollbar">
-        <div
-          className={`flex items-start justify-center w-full ${
-            columns.length === 3
-              ? 'gap-5'
-              : columns.length === 4
-              ? 'gap-3.5'
-              : columns.length === 5
-              ? 'gap-2.5'
-              : 'gap-1.5'
-          }`}
-        >
+      {/* Main Playing Area: Hanging Downward Garden Columns (Directly beneath Goal section) */}
+      <div className="flex flex-col items-center justify-start pt-0.5 pb-1 w-full overflow-hidden touch-none select-none overscroll-none">
+        {/* Continuous Wooden Arbor Beam (Screenshot exact design) */}
+        <div className="w-full max-w-full px-1 mt-0.5 mb-0.5">
+          <div className="w-full h-4.5 rounded-md bg-gradient-to-r from-[#92400e] via-[#b45309] to-[#92400e] border border-[#78350f] shadow-sm flex items-center justify-between px-3">
+            {Array.from({ length: 11 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-[#78350f] border border-[#451a03]/60 shadow-inner"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className={`flex items-start justify-center w-full ${gapClass}`}>
           {columns.map((col, idx) => (
             <GardenColumn
               key={col.id}
@@ -671,10 +731,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               isHoveredDropTarget={hoveredColId === col.id && dragState?.sourceColId !== col.id}
               isDropValid={isDropValid}
               isShaking={shakingColId === col.id}
-              hasBigFlower={isColPureAndLargest(col)}
+              hasBigFlower={colHasBigFlower(col)}
               onPointerDownFlower={handlePointerDownFlower}
               onColumnClick={handleColumnClick}
-              compactMode={isCompact}
+              flowerSize={flowerSize}
+              columnWidth={columnWidth}
               draggedSubStackInfo={
                 dragState?.isDragging
                   ? { colId: dragState.sourceColId, fromIndex: dragState.fromIndex }
@@ -690,8 +751,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         <div
           className="fixed pointer-events-none z-50 flex flex-col items-center drop-shadow-2xl"
           style={{
-            left: `${dragState.currentX - 28}px`,
-            top: `${dragState.currentY - 28}px`,
+            left: `${dragState.currentX - flowerSize / 2}px`,
+            top: `${dragState.currentY - flowerSize / 2}px`,
             transform: 'scale(1.08)',
           }}
         >
@@ -699,9 +760,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           <div className="absolute inset-0 bg-amber-300/40 rounded-full blur-md" />
 
           {dragState.flowers.map((fl, fIdx) => (
-            <div key={fl.id || fIdx} className={`relative z-10 ${fIdx > 0 ? '-mt-2.5' : ''}`}>
+            <div key={fl.id || fIdx} className={`relative z-10 ${fIdx > 0 ? '-mt-3' : ''}`}>
               {fIdx > 0 && (
-                <div className="w-1 h-3 bg-emerald-600/70 mx-auto -mb-1 rounded-full pointer-events-none" />
+                <div className="w-1.5 h-3.5 bg-emerald-600/70 mx-auto -mb-1 rounded-full pointer-events-none" />
               )}
               <FlowerRenderer
                 color={fl.color}
@@ -711,7 +772,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 isRainbow={fl.isRainbow}
                 isLocked={fl.isLocked}
                 isSelected={true}
-                size={isCompact ? 46 : 54}
+                size={flowerSize}
+                sizeVariant={fl.sizeVariant}
               />
             </div>
           ))}
@@ -719,7 +781,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       )}
 
       {/* Bottom Controls Bar: Add Seeds, Restart, Undo, Hint */}
-      <div className="w-full flex items-center justify-between gap-2 pt-2">
+      <div className="w-full flex items-center justify-between gap-2 pt-1 pb-1 mt-auto shrink-0">
         {/* Add More Seeds / Tohum Ekle Button */}
         <button
           onClick={handleAddMoreFlowers}

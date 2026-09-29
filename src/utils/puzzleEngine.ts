@@ -68,22 +68,28 @@ export function checkAndPerformMerge(
     return { updatedFlowers: flowers, didMerge: false };
   }
 
-  // Look for 3 consecutive matching flowers in the downward column
+  // Look for 3 consecutive matching flowers of the same color in the downward column
   for (let i = 0; i <= flowers.length - 3; i++) {
     const f1 = flowers[i];
     const f2 = flowers[i + 1];
     const f3 = flowers[i + 2];
 
+    // Stage 5+ flowers are already fully mature, crowning blooms - they do not merge further
+    if (f1.stage >= 5 || f2.stage >= 5 || f3.stage >= 5) {
+      continue;
+    }
+
     const colorsMatch =
       (f1.color === f2.color || f1.isWild || f2.isWild || f1.isRainbow || f2.isRainbow) &&
       (f2.color === f3.color || f2.isWild || f3.isWild || f2.isRainbow || f3.isRainbow);
 
-    const stagesMatch = f1.stage === f2.stage && f2.stage === f3.stage;
-
-    if (colorsMatch && stagesMatch) {
+    if (colorsMatch) {
       // Determine resulting color (prioritize non-wild color)
       const targetColor = (!f1.isWild && !f1.isRainbow ? f1.color : (!f2.isWild ? f2.color : f3.color));
-      const nextStage = Math.min(6, f1.stage + 1) as FlowerItem['stage'];
+
+      // Sequential growth: Tohum (1) -> Çiçek 1 (2) -> Çiçek 2 (3) -> Çiçek 3 (4) -> En Son Büyük Çiçek (5)
+      const maxStage = Math.max(f1.stage, f2.stage, f3.stage);
+      const nextStage = Math.min(5, maxStage + 1) as FlowerItem['stage'];
 
       const mergedFlower: FlowerItem = {
         id: `merged_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -105,6 +111,11 @@ export function checkAndPerformMerge(
   }
 
   return { updatedFlowers: flowers, didMerge: false };
+}
+
+// Determine if a flower is the FINAL LARGEST FLOWER (Stage 5)
+export function isFinalLargeFlower(flower: FlowerItem): boolean {
+  return flower.stage >= 5;
 }
 
 // Unlock all locked flowers on the board when any merge occurs

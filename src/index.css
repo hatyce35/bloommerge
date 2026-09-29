@@ -1,49 +1,28 @@
 @import "tailwindcss";
 
-@keyframes floatPetal {
-  0% {
-    transform: translateY(0) rotate(0deg) translateX(0);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.65;
-  }
-  85% {
-    opacity: 0.55;
-  }
-  100% {
-    transform: translateY(-115vh) rotate(360deg) translateX(35px);
-    opacity: 0;
-  }
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
 }
 
-.animate-float-petal {
-  animation: floatPetal linear infinite;
+/* Custom scrollbar hiding */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-@keyframes gentleSway {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(3deg);
-  }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-.animate-gentle-sway {
-  animation: gentleSway 3s ease-in-out infinite;
-}
-
-@keyframes pulseGold {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 12px rgba(251, 191, 36, 0);
-  }
-}
-
-.animate-pulse-gold {
-  animation: pulseGold 2s infinite;
-}
-

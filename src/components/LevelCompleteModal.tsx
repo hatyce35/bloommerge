@@ -82,10 +82,10 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
           </div>
 
           <h2 className="text-2xl font-bold tracking-tight text-emerald-950 mt-2 font-display">
-            BLOOM COMPLETE!
+            BÖLÜM TAMAMLANDI! 🌸
           </h2>
-          <p className="text-xs font-medium text-emerald-700/80 mt-0.5">
-            Level {levelNumber} Cleared
+          <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+            Tüm Sütunlarda Büyük Çiçekler Açtı! (Seviye {levelNumber})
           </p>
 
           {/* Stars Awarded */}
@@ -134,9 +134,9 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
             {hasNextLevel && (
               <button
                 onClick={onNextLevel}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-98 text-white font-semibold text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-98 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <span>Next Level</span>
+                <span>Sonraki Seviye (Farklı Tohumlar)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}
@@ -144,18 +144,18 @@ export const LevelCompleteModal: React.FC<LevelCompleteModalProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={onReplay}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Replay</span>
+                <span>Tekrar Oyna</span>
               </button>
 
               <button
                 onClick={onGoToLevels}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
               >
                 <Grid className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Levels</span>
+                <span>Bölümler</span>
               </button>
             </div>
           </div>

@@ -12,12 +12,12 @@ export interface FlowerMeta {
 }
 
 export const STAGE_DESCRIPTIONS: Record<FlowerStage, { title: string; symbol: string }> = {
-  1: { title: 'Bud', symbol: '🌱' },
-  2: { title: 'Small Flower', symbol: '🌷' },
-  3: { title: 'Blossom', symbol: '🌸' },
-  4: { title: 'Large Blossom', symbol: '🌺' },
-  5: { title: 'Rare Flower', symbol: '🌻' },
-  6: { title: 'Magical Flower', symbol: '✨' },
+  1: { title: 'Tohum', symbol: '🌱' },
+  2: { title: 'Çiçek 1', symbol: '🌷' },
+  3: { title: 'Çiçek 2', symbol: '🌸' },
+  4: { title: 'Çiçek 3', symbol: '🌺' },
+  5: { title: 'En Büyük Çiçek', symbol: '✨' },
+  6: { title: 'En Büyük Çiçek', symbol: '✨' },
 };
 
 export const FLOWER_FAMILIES: Record<FlowerColor, FlowerMeta> = {

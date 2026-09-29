@@ -12,10 +12,12 @@ export interface FlowerItem {
   id: string;
   color: FlowerColor;
   stage: FlowerStage;
+  sourceCount?: number;   // Number of original/small flowers contributing to this flower (>= 5 = Final Large Flower)
   isWild?: boolean;       // Can match any color once
   isFrozen?: boolean;     // Encased in ice, must thaw
   isRainbow?: boolean;    // Adapts to color needed
   isLocked?: boolean;     // Locked with vine until an objective is met
+  sizeVariant?: 'small' | 'medium' | 'large'; // Büyüklü küçüklü tohum çeşitleri
 }
 
 export interface GardenColumnData {
@@ -45,6 +47,7 @@ export interface LevelConfig {
       isFrozen?: boolean;
       isRainbow?: boolean;
       isLocked?: boolean;
+      sizeVariant?: 'small' | 'medium' | 'large';
     }[];
   }[];
   goals: LevelGoal[];
