@@ -1,4 +1,16 @@
-export type FlowerColor = 'pink' | 'blue' | 'yellow' | 'purple' | 'orange' | 'red';
+export type FlowerColor =
+  | 'pink'
+  | 'blue'
+  | 'yellow'
+  | 'purple'
+  | 'orange'
+  | 'red'
+  | 'white'
+  | 'emerald'
+  | 'cyan'
+  | 'violet'
+  | 'ruby'
+  | 'gold';
 
 export type FlowerStage = 1 | 2 | 3 | 4 | 5 | 6;
 // Stage 1: 🌱 Bud

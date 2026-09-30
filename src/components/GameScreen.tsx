@@ -704,10 +704,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         )}
       </div>
 
-      {/* Main Playing Area: Hanging Downward Garden Columns (Directly beneath Goal section) */}
-      <div className="flex flex-col items-center justify-start pt-0.5 pb-1 w-full overflow-hidden touch-none select-none overscroll-none">
+      {/* Main Playing Area: Hanging Downward Garden Columns (Directly beneath Goal section, elongates downwards) */}
+      <div className="flex-1 flex flex-col items-center justify-start pt-0.5 pb-2 w-full overflow-y-auto overflow-x-hidden no-scrollbar touch-none select-none overscroll-none">
         {/* Continuous Wooden Arbor Beam (Screenshot exact design) */}
-        <div className="w-full max-w-full px-1 mt-0.5 mb-0.5">
+        <div className="w-full max-w-full px-1 mt-0.5 mb-0.5 shrink-0">
           <div className="w-full h-4.5 rounded-md bg-gradient-to-r from-[#92400e] via-[#b45309] to-[#92400e] border border-[#78350f] shadow-sm flex items-center justify-between px-3">
             {Array.from({ length: 11 }).map((_, i) => (
               <div
@@ -718,7 +718,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </div>
         </div>
 
-        <div className={`flex items-start justify-center w-full ${gapClass}`}>
+        <div className={`flex items-start justify-center w-full pb-3 ${gapClass}`}>
           {columns.map((col, idx) => (
             <GardenColumn
               key={col.id}

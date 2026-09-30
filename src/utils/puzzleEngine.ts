@@ -59,7 +59,7 @@ export function isValidMove(
 }
 
 // Check for 3-stack vertical merges in a column (downward stacking)
-// Returns the updated flowers array and number of merges triggered
+// "Aynı çeşit tohum ve aynı çeşit çiçekten 3 tane birleşince bir sonraki çiçek oluşsun"
 export function checkAndPerformMerge(
   column: GardenColumnData
 ): { updatedFlowers: FlowerItem[]; didMerge: boolean; mergedColor?: string; newStage?: number } {
@@ -68,7 +68,16 @@ export function checkAndPerformMerge(
     return { updatedFlowers: flowers, didMerge: false };
   }
 
-  // Look for 3 consecutive matching flowers of the same color in the downward column
+  // Helper to calculate the next stage flower
+  const getNextStage = (baseStage: number): FlowerItem['stage'] => {
+    if (baseStage === 1) return 2; // 🌱 Tohum ➔ 🌷 Çiçek 1
+    if (baseStage === 2) return 3; // 🌷 Çiçek 1 ➔ 🌸 Çiçek 2
+    if (baseStage === 3) return 5; // 🌸 Çiçek 2 ➔ 🌻 En Büyük Çiçek
+    if (baseStage === 4) return 5; // 🌺 Çiçek 3 ➔ 🌻 En Büyük Çiçek
+    return 5;
+  };
+
+  // 1. Look for 3 consecutive matching items of the same color AND same stage in the downward column
   for (let i = 0; i <= flowers.length - 3; i++) {
     const f1 = flowers[i];
     const f2 = flowers[i + 1];
@@ -83,13 +92,16 @@ export function checkAndPerformMerge(
       (f1.color === f2.color || f1.isWild || f2.isWild || f1.isRainbow || f2.isRainbow) &&
       (f2.color === f3.color || f2.isWild || f3.isWild || f2.isRainbow || f3.isRainbow);
 
-    if (colorsMatch) {
+    // EXACT STAGE MATCH: Aynı çeşit tohum kendi arasında (stage 1), aynı çeşit çiçek kendi arasında (stage 2, 3...)
+    const stagesMatch =
+      (f1.stage === f2.stage || f1.isWild || f2.isWild || f1.isRainbow || f2.isRainbow) &&
+      (f2.stage === f3.stage || f2.isWild || f3.isWild || f2.isRainbow || f3.isRainbow);
+
+    if (colorsMatch && stagesMatch) {
       // Determine resulting color (prioritize non-wild color)
       const targetColor = (!f1.isWild && !f1.isRainbow ? f1.color : (!f2.isWild ? f2.color : f3.color));
-
-      // Sequential growth: Tohum (1) -> Çiçek 1 (2) -> Çiçek 2 (3) -> Çiçek 3 (4) -> En Son Büyük Çiçek (5)
-      const maxStage = Math.max(f1.stage, f2.stage, f3.stage);
-      const nextStage = Math.min(5, maxStage + 1) as FlowerItem['stage'];
+      const baseStage = (!f1.isWild && !f1.isRainbow ? f1.stage : (!f2.isWild ? f2.stage : f3.stage));
+      const nextStage = getNextStage(baseStage);
 
       const mergedFlower: FlowerItem = {
         id: `merged_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
@@ -103,6 +115,44 @@ export function checkAndPerformMerge(
       const newFlowers = [...flowers.slice(0, i), mergedFlower, ...flowers.slice(i + 3)];
       return {
         updatedFlowers: newFlowers,
+        didMerge: true,
+        mergedColor: targetColor,
+        newStage: nextStage,
+      };
+    }
+  }
+
+  // 2. Also check if 3 items of the exact same color AND same stage exist anywhere in the same column
+  const groups: { [key: string]: number[] } = {};
+  for (let idx = 0; idx < flowers.length; idx++) {
+    const f = flowers[idx];
+    if (f.stage >= 5 || f.isLocked) continue;
+    const key = `${f.color}_${f.stage}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(idx);
+  }
+
+  for (const key in groups) {
+    if (groups[key].length >= 3) {
+      const [i1, i2, i3] = groups[key].slice(0, 3);
+      const f1 = flowers[i1];
+      const targetColor = f1.color;
+      const baseStage = f1.stage;
+      const nextStage = getNextStage(baseStage);
+
+      const mergedFlower: FlowerItem = {
+        id: `merged_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        color: targetColor,
+        stage: nextStage,
+        isFrozen: false,
+        isLocked: false,
+      };
+
+      const updated = flowers.filter((_, idx) => idx !== i1 && idx !== i2 && idx !== i3);
+      updated.splice(i1, 0, mergedFlower);
+
+      return {
+        updatedFlowers: updated,
         didMerge: true,
         mergedColor: targetColor,
         newStage: nextStage,

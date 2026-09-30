@@ -76,9 +76,9 @@ export const GardenColumn: React.FC<GardenColumnProps> = ({
         </div>
       </div>
 
-      {/* Downward Vine Trellis & Flower Hanging Area (Fixed Rock-Solid Mint Card) */}
+      {/* Downward Vine Trellis & Flower Hanging Area (Dynamically lengthens as flowers are added) */}
       <div
-        className={`relative flex flex-col items-center justify-start w-full rounded-3xl pt-2 pb-2 h-[285px] transition-colors duration-100 ${
+        className={`relative flex flex-col items-center justify-start w-full rounded-3xl pt-2 pb-2 min-h-[220px] h-auto transition-all duration-200 ${
           isHoveredDropTarget
             ? isDropValid
               ? 'bg-[#d1fae5]/95 border-2 border-emerald-500 shadow-md ring-2 ring-emerald-400/50'
@@ -92,14 +92,16 @@ export const GardenColumn: React.FC<GardenColumnProps> = ({
             : 'bg-[#e8f7f2]/90 border border-[#99f6e4]/60 shadow-2xs'
         }`}
       >
-        {/* Continuous Central Hanging Dashed Vine (Screenshot exact style) */}
+        {/* Continuous Central Hanging Dashed Vine (Lengthens with the branch) */}
         <div className="absolute inset-y-3 left-1/2 -translate-x-1/2 w-0.5 border-r-2 border-dashed border-[#14b8a6]/45 pointer-events-none" />
 
-        {/* Decorative Ivy Leaves Along Vine (Screenshot style) */}
+        {/* Decorative Ivy Leaves Along Vine */}
         <div className="absolute top-10 left-1 w-2.5 h-1.5 bg-[#10b981]/40 rounded-full transform -rotate-45 pointer-events-none" />
         <div className="absolute top-24 right-1 w-2.5 h-1.5 bg-[#10b981]/40 rounded-full transform rotate-45 pointer-events-none" />
         <div className="absolute top-44 left-1 w-2.5 h-1.5 bg-[#10b981]/40 rounded-full transform -rotate-30 pointer-events-none" />
         <div className="absolute top-60 right-1 w-2.5 h-1.5 bg-[#10b981]/40 rounded-full transform rotate-30 pointer-events-none" />
+        <div className="absolute top-76 left-1 w-2.5 h-1.5 bg-[#10b981]/40 rounded-full transform -rotate-45 pointer-events-none" />
+        <div className="absolute top-96 right-1 w-2.5 h-1.5 bg-[#10b981]/40 rounded-full transform rotate-45 pointer-events-none" />
 
         {/* Stack of Flowers Hanging Downwards */}
         {column.flowers.map((flower, idx) => {
@@ -153,7 +155,7 @@ export const GardenColumn: React.FC<GardenColumnProps> = ({
         )}
 
         {/* Bottom Rounded U-Loop Anchor (Screenshot exact design) */}
-        <div className="mt-auto mb-1 w-4.5 h-5.5 border-[2.5px] border-[#0d9488]/80 rounded-b-full bg-[#ccfbf1]/60 shadow-2xs flex items-center justify-center pointer-events-none" />
+        <div className="mt-auto mb-1 w-4.5 h-5.5 border-[2.5px] border-[#0d9488]/80 rounded-b-full bg-[#ccfbf1]/60 shadow-2xs flex items-center justify-center pointer-events-none shrink-0" />
       </div>
     </div>
   );

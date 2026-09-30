@@ -45,11 +45,11 @@ function createLevel(
     tutorialTip?: string;
   }
 ): LevelConfig {
-  // Each color has:
-  // - 1 item at Stage 3 (🌸 Çiçek 2 - bir sonraki birleşmiş hali)
-  // - 1 item at Stage 2 (🌷 Çiçek 1 - ilk birleşmiş hali)
-  // - 5 items at Stage 1 (🌱 Tohum - büyüklü küçüklü tohumlar)
-  // Total 7 items per color
+  // Each color has a mathematically balanced 3-merge chain:
+  // - 3 items at Stage 1 (🌱 Tohum) ➔ 3'ü birleşince 1 tane Çiçek 1 (Stage 2) olur!
+  // - 2 items at Stage 2 (🌷 Çiçek 1) ➔ yukarıdakiyle 3 tane olur, 3'ü birleşince 1 tane Çiçek 2 (Stage 3) olur!
+  // - 2 items at Stage 3 (🌸 Çiçek 2) ➔ yukarıdakiyle 3 tane olur, 3'ü birleşince 1 tane En Büyük Çiçek (Stage 5) olur!
+  // Toplam 7 öge per renk (3 renk için 21 öge, 6 dala [5, 4, 4, 3, 3, 2] olarak dağıtılır)
   const allItems: {
     color: FlowerColor;
     stage: FlowerStage;
@@ -59,43 +59,19 @@ function createLevel(
     sizeVariant?: 'small' | 'medium' | 'large';
   }[] = [];
 
-  const sizePatterns: ('small' | 'medium' | 'large')[] = [
-    'small',
-    'medium',
-    'large',
-    'small',
-    'large',
-    'medium',
-  ];
+  const stagePattern: FlowerStage[] = [3, 2, 1, 3, 2, 1, 1];
+  const sizePatterns: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large'];
 
   // Interleave items by color and stage to create an interesting, natural puzzle board
   for (let step = 0; step < 7; step++) {
     colors.forEach((color, cIdx) => {
-      // Step 1 gives Stage 3 (🌸 Çiçek 2 - bir sonraki birleşmiş hali)
-      if (step === ((cIdx + 1) % 7)) {
-        allItems.push({
-          color,
-          stage: 3 as FlowerStage, // 🌸 Çiçek 2 (Bir sonraki birleşmiş hali)
-          sizeVariant: 'medium',
-        });
-      }
-      // Step 4 gives Stage 2 (🌷 Çiçek 1 - ilk birleşmiş hali)
-      else if (step === ((cIdx + 4) % 7)) {
-        allItems.push({
-          color,
-          stage: 2 as FlowerStage, // 🌷 Çiçek 1 (İlk birleşmiş hali)
-          sizeVariant: 'medium',
-        });
-      }
-      // Other steps give Stage 1 seeds with varied sizes (küçük, orta, iri tohumlar)
-      else {
-        const seedSize = sizePatterns[(step + cIdx) % sizePatterns.length];
-        allItems.push({
-          color,
-          stage: 1 as FlowerStage, // 🌱 Tohum (Büyüklü küçüklü tohum)
-          sizeVariant: seedSize,
-        });
-      }
+      const stage = stagePattern[(step + cIdx) % 7];
+      const seedSize = stage === 1 ? sizePatterns[(step + cIdx) % 3] : 'medium';
+      allItems.push({
+        color,
+        stage,
+        sizeVariant: seedSize,
+      });
     });
   }
 
@@ -230,6 +206,40 @@ const colorSets6: Array<Array<FlowerColor>> = [
   ['purple', 'pink', 'blue', 'orange', 'yellow', 'red'],
 ];
 
+// Egzotik Çiçek Renk Kümeleri (Level 41+ için: Beyaz Nilüfer, Zümrüt Yeşili, Turkuaz, Gece Menekşesi, Yakut Gülü, Altın Çiçek)
+const exoticColorSets3: Array<Array<FlowerColor>> = [
+  ['white', 'emerald', 'cyan'],
+  ['violet', 'gold', 'ruby'],
+  ['white', 'ruby', 'emerald'],
+  ['cyan', 'gold', 'violet'],
+  ['emerald', 'gold', 'pink'],
+  ['white', 'cyan', 'purple'],
+  ['ruby', 'violet', 'yellow'],
+];
+
+const exoticColorSets4: Array<Array<FlowerColor>> = [
+  ['white', 'emerald', 'cyan', 'gold'],
+  ['violet', 'ruby', 'white', 'emerald'],
+  ['cyan', 'violet', 'gold', 'ruby'],
+  ['emerald', 'cyan', 'pink', 'white'],
+  ['ruby', 'gold', 'purple', 'violet'],
+  ['white', 'emerald', 'blue', 'ruby'],
+];
+
+const exoticColorSets5: Array<Array<FlowerColor>> = [
+  ['white', 'emerald', 'cyan', 'violet', 'gold'],
+  ['ruby', 'emerald', 'white', 'cyan', 'gold'],
+  ['violet', 'ruby', 'white', 'emerald', 'pink'],
+  ['cyan', 'gold', 'violet', 'ruby', 'blue'],
+  ['emerald', 'white', 'cyan', 'ruby', 'purple'],
+];
+
+const exoticColorSets6: Array<Array<FlowerColor>> = [
+  ['white', 'emerald', 'cyan', 'violet', 'ruby', 'gold'],
+  ['white', 'emerald', 'pink', 'blue', 'cyan', 'gold'],
+  ['violet', 'ruby', 'gold', 'purple', 'emerald', 'white'],
+];
+
 // 200 Levels: Strictly starting with seeds, 5-stage progression (Tohum -> Cicek 1 -> Cicek 2 -> Cicek 3 -> En Buyuk Cicek)
 export const LEVELS: LevelConfig[] = [
   // Level 1: Initial seeds (Pembe, Mavi, Sarı tohumları)
@@ -317,14 +327,33 @@ export const LEVELS: LevelConfig[] = [
       chosenColors = idx % 2 === 0
         ? colorSets3[idx % colorSets3.length]
         : colorSets4[idx % colorSets4.length];
-    } else if (levelId <= 60) {
+    } else if (levelId <= 40) {
+      // Levels 21 to 40: Classic 6 colors
       const pool = [colorSets3[idx % colorSets3.length], colorSets4[idx % colorSets4.length], colorSets5[idx % colorSets5.length]];
       chosenColors = pool[idx % pool.length];
+    } else if (levelId <= 70) {
+      // Levels 41 to 70: Introduction of Exotic Colors (White, Emerald, Cyan, Gold, Ruby, Violet)!
+      const pool = [
+        exoticColorSets3[idx % exoticColorSets3.length],
+        exoticColorSets4[idx % exoticColorSets4.length],
+        exoticColorSets5[idx % exoticColorSets5.length],
+      ];
+      chosenColors = pool[idx % pool.length];
     } else if (levelId <= 120) {
-      const pool = [colorSets4[idx % colorSets4.length], colorSets5[idx % colorSets5.length]];
+      // Levels 71 to 120: Rich exotic & hybrid palettes
+      const pool = [
+        exoticColorSets4[idx % exoticColorSets4.length],
+        exoticColorSets5[idx % exoticColorSets5.length],
+        exoticColorSets6[idx % exoticColorSets6.length],
+      ];
       chosenColors = pool[idx % pool.length];
     } else {
-      const pool = [colorSets4[idx % colorSets4.length], colorSets5[idx % colorSets5.length], colorSets6[idx % colorSets6.length]];
+      // Levels 121 to 200: Master botanical gardens with full 12-color variety
+      const pool = [
+        exoticColorSets4[idx % exoticColorSets4.length],
+        exoticColorSets5[idx % exoticColorSets5.length],
+        exoticColorSets6[idx % exoticColorSets6.length],
+      ];
       chosenColors = pool[idx % pool.length];
     }
 
@@ -335,7 +364,9 @@ export const LEVELS: LevelConfig[] = [
     return createLevel(
       levelId,
       `${chapterName} - ${((levelId - 1) % 10) + 1}`,
-      `${chosenColors.length} Sütun Tohum Bahçesi`,
+      levelId === 41
+        ? 'Yeni Egzotik Çiçekler: Beyaz Nilüfer, Zümrüt Yeşili ve Turkuaz!'
+        : `${chosenColors.length} Sütun Tohum Bahçesi`,
       chosenColors,
       {
         hasFrozen,
@@ -348,8 +379,13 @@ export const LEVELS: LevelConfig[] = [
             ? 'Joker Tohum (Tüm renklerle birleşir!)'
             : levelId === 35
             ? 'Sarmaşık Kilitler (Birleşme yaparak çöz!)'
+            : levelId === 41
+            ? 'Yeni Egzotik Çiçekler Açıldı: Beyaz Nilüfer, Zümrüt Yeşili, Turkuaz, Yakut, Gece Menekşesi ve Altın Çiçek!'
             : undefined,
-        tutorialTip: 'Tohumları sırayla birleştirerek her sütunda en büyük çiçekleri açtır!',
+        tutorialTip:
+          levelId === 41
+            ? 'Level 40 sonrasında yeni egzotik çiçek türleri ve renkler bahçene katıldı!'
+            : 'Tohumları sırayla birleştirerek her sütunda en büyük çiçekleri açtır!',
       }
     );
   }),

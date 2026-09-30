@@ -180,6 +180,117 @@ export const FlowerRenderer: React.FC<FlowerRendererProps> = ({
         );
       }
 
+      if (color === 'white') {
+        // White Pearl Jasmine Star (Ay Çiçeği / Beyaz Nilüfer)
+        return (
+          <g>
+            <path d="M 23 37 C 24 41 28 41 29 37 Z" fill="#22c55e" stroke="#16a34a" strokeWidth="0.8" />
+            {[0, 72, 144, 216, 288].map((ang) => (
+              <ellipse
+                key={'wh-' + ang}
+                cx="26"
+                cy="17"
+                rx="4.6"
+                ry="9"
+                fill="#ffffff"
+                stroke="#94a3b8"
+                strokeWidth="1.2"
+                transform={`rotate(${ang} 26 26)`}
+              />
+            ))}
+            <circle cx="26" cy="26" r="4.5" fill="#fef08a" stroke="#ca8a04" strokeWidth="0.8" />
+            <circle cx="26" cy="26" r="2.2" fill="#eab308" />
+          </g>
+        );
+      }
+
+      if (color === 'emerald') {
+        // Emerald Jade Lotus / Bamboo Sprout (Zümrüt Yeşili)
+        return (
+          <g>
+            <path
+              d="M 26 8 C 19 18 19 32 26 40 C 33 32 33 18 26 8 Z"
+              fill="#10b981"
+              stroke="#047857"
+              strokeWidth="1.6"
+            />
+            <ellipse cx="20" cy="26" rx="5.5" ry="9" fill="#34d399" stroke="#047857" strokeWidth="1.2" transform="rotate(-25 20 26)" />
+            <ellipse cx="32" cy="26" rx="5.5" ry="9" fill="#34d399" stroke="#047857" strokeWidth="1.2" transform="rotate(25 32 26)" />
+            <circle cx="26" cy="27" r="3.2" fill="#a7f3d0" />
+            <circle cx="26" cy="27" r="1.6" fill="#ffffff" />
+          </g>
+        );
+      }
+
+      if (color === 'cyan') {
+        // Cyan Ocean Bell (Turkuaz Cennet Çiçeği)
+        return (
+          <g>
+            <path
+              d="M 26 10 C 17 12 15 24 16 33 C 20 31 23 33 26 31 C 29 33 32 31 36 33 C 37 24 35 12 26 10 Z"
+              fill="#06b6d4"
+              stroke="#0e7490"
+              strokeWidth="1.6"
+            />
+            <ellipse cx="26" cy="24" rx="5.5" ry="8" fill="#a5f3fc" opacity="0.85" />
+            <circle cx="23" cy="18" r="1.8" fill="#ffffff" />
+          </g>
+        );
+      }
+
+      if (color === 'violet') {
+        // Midnight Violet Iris (Gece Menekşesi)
+        return (
+          <g>
+            <ellipse cx="26" cy="16" rx="7" ry="10" fill="#6366f1" stroke="#4338ca" strokeWidth="1.5" />
+            <ellipse cx="18" cy="26" rx="8" ry="6" fill="#818cf8" stroke="#4338ca" strokeWidth="1.4" transform="rotate(-30 18 26)" />
+            <ellipse cx="34" cy="26" rx="8" ry="6" fill="#818cf8" stroke="#4338ca" strokeWidth="1.4" transform="rotate(30 34 26)" />
+            <circle cx="26" cy="25" r="4" fill="#e0e7ff" />
+            <circle cx="26" cy="25" r="2" fill="#fef08a" stroke="#ca8a04" strokeWidth="0.8" />
+          </g>
+        );
+      }
+
+      if (color === 'ruby') {
+        // Crimson Ruby Rosebud (Yakut Gülü)
+        return (
+          <g>
+            <path d="M 23 37 C 24 41 28 41 29 37 Z" fill="#15803d" stroke="#166534" strokeWidth="0.8" />
+            <circle cx="26" cy="25" r="13" fill="#e11d48" stroke="#9f1239" strokeWidth="1.6" />
+            <ellipse cx="26" cy="25" rx="9" ry="9" fill="#be123c" stroke="#881337" strokeWidth="1.2" />
+            <path
+              d="M 22 22 C 26 18 30 22 28 26 C 26 29 23 27 24 25"
+              fill="none"
+              stroke="#fecdd3"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <circle cx="26" cy="25" r="2.5" fill="#ffe4e6" />
+          </g>
+        );
+      }
+
+      if (color === 'gold') {
+        // Golden Sunburst Sprout (Altın Güneş Çiçeği)
+        return (
+          <g>
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((ang) => (
+              <path
+                key={'gd-' + ang}
+                d="M 26 12 L 28 22 L 34 26 L 28 30 L 26 40 L 24 30 L 18 26 L 24 22 Z"
+                fill="#eab308"
+                stroke="#a16207"
+                strokeWidth="0.8"
+                transform={`rotate(${ang} 26 26)`}
+              />
+            ))}
+            <circle cx="26" cy="26" r="6" fill="#facc15" stroke="#a16207" strokeWidth="1.2" />
+            <circle cx="26" cy="26" r="3.5" fill="#ca8a04" />
+            <circle cx="24.5" cy="24.5" r="1" fill="#ffffff" />
+          </g>
+        );
+      }
+
       // Default fallback (e.g. red)
       return (
         <g>

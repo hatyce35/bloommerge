@@ -22,9 +22,24 @@ export const GardenCollection: React.FC<GardenCollectionProps> = ({
   const currentFamily: FlowerMeta = FLOWER_FAMILIES[selectedColor];
   const stages: FlowerStage[] = [1, 2, 3, 4, 5, 6];
 
-  // Count total discovered flowers across all families
+  // Count total discovered flowers across all families (including exotic colors unlocked from Level 40+)
+  const ALL_COLLECTION_COLORS: FlowerColor[] = [
+    'pink',
+    'blue',
+    'yellow',
+    'purple',
+    'orange',
+    'red',
+    'white',
+    'emerald',
+    'cyan',
+    'violet',
+    'ruby',
+    'gold',
+  ];
+
   const allCombinations: string[] = [];
-  (['pink', 'blue', 'yellow', 'purple', 'orange', 'red'] as FlowerColor[]).forEach((col) => {
+  ALL_COLLECTION_COLORS.forEach((col) => {
     stages.forEach((st) => {
       allCombinations.push(`${col}_${st}`);
     });
@@ -56,7 +71,7 @@ export const GardenCollection: React.FC<GardenCollectionProps> = ({
 
       {/* Flower Family Selector Pills */}
       <div className="flex items-center gap-1.5 overflow-x-auto py-1 pb-2 no-scrollbar">
-        {(['pink', 'blue', 'yellow', 'purple', 'orange', 'red'] as FlowerColor[]).map((col) => {
+        {ALL_COLLECTION_COLORS.map((col) => {
           const fam = FLOWER_FAMILIES[col];
           const isSelected = selectedColor === col;
           return (
